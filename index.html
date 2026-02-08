@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💖 Valentine</title>
+  <style>
+    :root{
+      --pink1:#ff4d8d;
+      --pink2:#ff7aa8;
+      --pink3:#ffd1df;
+      --red1:#ff2d55;
+      --red2:#ff476f;
+      --glass: rgba(255,255,255,.16);
+      --glass2: rgba(255,255,255,.10);
+      --text: rgba(255,255,255,.95);
+      --muted: rgba(255,255,255,.78);
+      --shadow: 0 24px 80px rgba(0,0,0,.25);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      height:100svh;
+      overflow:hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:#120010;
+    }
+
+    /* LIVE WALLPAPER BACKGROUND */
+    .wallpaper{
+      position:fixed; inset:0;
+      background:
+        radial-gradient(900px 700px at 15% 20%, rgba(255,77,141,.55), transparent 60%),
+        radial-gradient(700px 600px at 85% 25%, rgba(255,45,85,.40), transparent 58%),
+        radial-gradient(850px 650px at 55% 85%, rgba(255,209,223,.35), transparent 60%),
+        linear-gradient(120deg, rgba(255,45,85,.25), rgba(255,77,141,.25), rgba(255,122,168,.22));
+      filter: saturate(1.1);
+      animation: drift 12s ease-in-out infinite alternate;
+      transform: scale(1.05);
+    }
+    @keyframes drift{
+      0%{ filter: hue-rotate(0deg) saturate(1.05); transform: scale(1.06) translate(-1.5%, -1%); }
+      100%{ filter: hue-rotate(6deg) saturate(1.15); transform: scale(1.08) translate(1.5%, 1.2%); }
+    }
+
+    /* soft sparkle grain */
+    .grain{
+      position:fixed; inset:0;
+      background-image: radial-gradient(rgba(255,255,255,.10) 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity:.12;
+      mix-blend-mode: overlay;
+      pointer-events:none;
+    }
+
+    /* HEART LAYER (floating) */
+    canvas#hearts{
+      position:fixed; inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+    }
+
+    /* CONTENT OVERLAY */
+    .wrap{
+      position:relative;
+      height:100svh;
+      display:grid;
+      place-items:center;
+      padding: 22px;
+      z-index:2;
+    }
+
+    .panel{
+      width:min(820px, 94vw);
+      border-radius: 26px;
+      background: linear-gradient(180deg, var(--glass), var(--glass2));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      padding: 28px 24px 22px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* subtle glow edge */
+    .panel::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(600px 200px at 20% 0%, rgba(255,255,255,.22), transparent 55%),
+                  radial-gradient(600px 220px at 80% 100%, rgba(255,255,255,.16), transparent 55%);
+      opacity:.6;
+      pointer-events:none;
+    }
+
+    .page{ display:none; position:relative; z-index:1; }
+    .page.active{ display:block; }
+
+    h1{
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1.02;
+      letter-spacing: -0.4px;
+      text-shadow: 0 10px 35px rgba(0,0,0,.20);
+    }
+
+    .text{
+      margin: 0 0 14px;
+      font-size: clamp(15px, 2vw, 20px);
+      line-height: 1.55;
+      color: var(--muted);
+      max-width: 60ch;
+    }
+
+    .pill{
+      display:inline-block;
+      margin-top: 2px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.16);
+      color: rgba(255,255,255,.85);
+      font-size: 13px;
+    }
+
+    .btnRow{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 12px;
+    }
+
+    button{
+      border:none;
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 750;
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+      user-select:none;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+
+    .yes{
+      background: linear-gradient(135deg, var(--red1), var(--pink1));
+      color:white;
+      box-shadow: 0 16px 34px rgba(255,45,85,.25);
+    }
+    .yes:hover{ filter: brightness(1.03); box-shadow: 0 18px 40px rgba(255,45,85,.30); }
+
+    .no{
+      background: rgba(255,255,255,.14);
+      color: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 12px 26px rgba(0,0,0,.14);
+      position:relative;
+    }
+
+    .next{
+      background: rgba(255,255,255,.18);
+      color: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 12px 26px rgba(0,0,0,.14);
+    }
+
+    .mini{
+      margin-top: 12px;
+      font-size: 14px;
+      color: rgba(255,255,255,.78);
+    }
+
+    /* Mobile nicer spacing */
+    @media (max-width:520px){
+      .panel{ padding: 22px 18px 18px; }
+      .btnRow{ justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wallpaper"></div>
+  <div class="grain"></div>
+  <canvas id="hearts"></canvas>
+
+  <div class="wrap">
+    <div class="panel" id="panel">
+      <!-- PAGE 1 -->
+      <section class="page active" id="page1">
+        <h2>Will you be my valentine forever babyyy? 💗</h2>
+        <p class="text">
+          I just want you to know that you make me feel so loved and safe kanna.❤️❤️❤️
+          <br/>
+          You’re the best unplanned thing that has happened in my life baby.😚😚😚 You're my comfort, my favorite smile, my sweetest thought and my everything babyy.
+          <br/><br/>
+          So can I keep you forever ah kannaluuu? ❤️❤️❤️
+        </p>
+
+        <div class="btnRow">
+          <button class="yes" id="yesBtn">YES baby 💞</button>
+          <button class="no" id="noBtn">No</button>
+          <button class="next" id="nextBtn" style="display:none;">Next →</button>
+        </div>
+
+        <div class="mini" id="note1">tap anywhere kannaa for my tiny hearts</div>
+        <span class="pill">Missing you badly kannaaa - Likhitha Jithin</span>
+      </section>
+
+      <!-- PAGE 2 -->
+      <section class="page" id="page2">
+        <h2>Missing you very badly kannaa…</h2>
+        <p class="text">
+          I wish I was with you now babyyy
+          <br/>
+          I want to sit in your laps and hug you tight and just be there like that like your little baby girl kannaa ❤️
+          <br/><br/>
+          Until we meet, take these hearts and my kisses babyyyy 😚❤️
+        </p>
+
+        <div class="btnRow">
+          <button class="yes" id="moreBtn">More hearts ❤️</button>
+          <button class="next" id="backBtn">← Back</button>
+        </div>
+
+        <div class="mini">tap anywhere kanna… will give all my heart to you babyyy ✨</div>
+        <span class="pill">Love you forever and ever and ever and ever and ever and ever my bangaram 😚😚😚😚😚</span>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---------- PAGE LOGIC ----------
+    const page1 = document.getElementById("page1");
+    const page2 = document.getElementById("page2");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const backBtn = document.getElementById("backBtn");
+    const moreBtn = document.getElementById("moreBtn");
+    const note1 = document.getElementById("note1");
+
+    let accepted = false;
+
+    function showPage(n){
+      if(n === 1){ page1.classList.add("active"); page2.classList.remove("active"); }
+      else { page1.classList.remove("active"); page2.classList.add("active"); }
+      burst(16);
+    }
+
+    yesBtn.addEventListener("click", () => {
+      accepted = true;
+      nextBtn.style.display = "inline-block";
+      note1.textContent = "I love you babyyyyy💗 now click Next →";
+      burst(26);
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if(!accepted) return;
+      showPage(2);
+    });
+
+    backBtn?.addEventListener("click", () => showPage(1));
+    moreBtn?.addEventListener("click", () => burst(34));
+
+    // Cute “No” dodge — gentle
+    function dodgeNo(){
+      const panel = document.getElementById("panel");
+      const rect = panel.getBoundingClientRect();
+      const btnRect = noBtn.getBoundingClientRect();
+      const pad = 14;
+
+      const maxX = rect.width - btnRect.width - pad;
+      const maxY = rect.height - btnRect.height - pad;
+
+      const x = pad + Math.random() * maxX;
+      const y = pad + Math.random() * maxY;
+
+      noBtn.style.position = "absolute";
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+
+      note1.textContent = "No other option kannaa😌 just say yes baby 💞";
+      burst(10);
+    }
+    noBtn.addEventListener("mouseenter", dodgeNo);
+    noBtn.addEventListener("click", dodgeNo);
+
+    // ---------- LIVE HEARTS (CANVAS) ----------
+    const canvas = document.getElementById("hearts");
+    const ctx = canvas.getContext("2d");
+
+    function resize(){
+      canvas.width = Math.floor(window.innerWidth * devicePixelRatio);
+      canvas.height = Math.floor(window.innerHeight * devicePixelRatio);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const hearts = [];
+    const colors = [
+      "rgba(255,45,85,.75)",
+      "rgba(255,77,141,.70)",
+      "rgba(251,113,133,.65)",
+      "rgba(255,122,168,.55)"
+    ];
+
+    function addFloatingHeart(){
+      hearts.push({
+        x: Math.random() * window.innerWidth,
+        y: window.innerHeight + 30 + Math.random()*120,
+        s: 8 + Math.random() * 18,
+        vy: 0.25 + Math.random() * 0.8,
+        vx: (Math.random() - 0.5) * 0.35,
+        a: 0.35 + Math.random()*0.55,
+        rot: Math.random()*Math.PI,
+        vr: (Math.random()-0.5)*0.02,
+        c: colors[Math.floor(Math.random()*colors.length)]
+      });
+      if(hearts.length > 90) hearts.shift();
+    }
+
+    // start with some hearts
+    for(let i=0;i<40;i++) addFloatingHeart();
+    setInterval(addFloatingHeart, 220);
+
+    function drawHeart(x, y, size, color, alpha, rot){
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+
+      // simple heart path
+      const s = size;
+      ctx.beginPath();
+      ctx.moveTo(0, s*0.35);
+      ctx.bezierCurveTo(s*0.9, -s*0.25, s*0.95, s*0.85, 0, s*1.15);
+      ctx.bezierCurveTo(-s*0.95, s*0.85, -s*0.9, -s*0.25, 0, s*0.35);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function tick(){
+      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+
+      // float hearts
+      for(const h of hearts){
+        h.y -= h.vy;
+        h.x += h.vx;
+        h.rot += h.vr;
+
+        // gentle sway
+        h.x += Math.sin((h.y/70)) * 0.15;
+
+        drawHeart(h.x, h.y, h.s, h.c, h.a, h.rot);
+      }
+
+      // remove off-screen
+      for(let i=hearts.length-1;i>=0;i--){
+        if(hearts[i].y < -60) hearts.splice(i,1);
+      }
+
+      // pop hearts
+      for(let i=pops.length-1;i>=0;i--){
+        const p = pops[i];
+        p.life -= 1;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.02; // tiny gravity
+        p.rot += p.vr;
+        const alpha = Math.max(0, p.life / p.maxLife);
+
+        drawHeart(p.x, p.y, p.s, p.c, alpha, p.rot);
+
+        if(p.life <= 0) pops.splice(i,1);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    // pop on click/tap
+    const pops = [];
+    function pop(x,y,amount=5){
+      for(let i=0;i<amount;i++){
+        pops.push({
+          x, y,
+          s: 8 + Math.random()*16,
+          vx: (Math.random()-0.5)*2.4,
+          vy: - (1.6 + Math.random()*2.8),
+          rot: Math.random()*Math.PI,
+          vr: (Math.random()-0.5)*0.08,
+          c: colors[Math.floor(Math.random()*colors.length)],
+          life: 70 + Math.floor(Math.random()*30),
+          maxLife: 90
+        });
+      }
+      if(pops.length > 180) pops.splice(0, pops.length-180);
+    }
+
+    function burst(n=18){
+      pop(window.innerWidth*0.5, window.innerHeight*0.45, n);
+    }
+
+    window.addEventListener("pointerdown", (e)=>{
+      pop(e.clientX, e.clientY, 4 + Math.floor(Math.random()*3));
+    });
+
+    tick();
+  </script>
+</body>
+</html>
